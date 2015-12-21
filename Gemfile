@@ -23,14 +23,13 @@ gem 'cloudfront-signer'
 gem 'vcap_common', '~> 4.0'
 gem 'allowy'
 gem 'loggregator_emitter', '~> 5.0'
-gem 'delayed_job', git: 'https://github.com/jeffpak93/delayed_job'
 gem 'delayed_job_sequel', git: 'https://github.com/cloudfoundry/delayed_job_sequel.git', branch: 'failed_jobs_fix'
 gem 'thin', '~> 1.6.0'
 gem 'newrelic_rpm', '3.12.0.288'
 gem 'clockwork', require: false
 gem 'activemodel'
 gem 'statsd-ruby'
-
+gem 'mime-types', '2.6.1'
 # We need to use https for git urls as the git protocol is blocked by various
 # firewalls
 gem 'vcap-concurrency', git: 'https://github.com/cloudfoundry/vcap-concurrency.git', ref: '2a5b0179'

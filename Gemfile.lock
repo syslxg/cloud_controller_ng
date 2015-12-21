@@ -24,13 +24,6 @@ GIT
     vcap-concurrency (0.1.0)
 
 GIT
-  remote: https://github.com/jeffpak93/delayed_job
-  revision: 695fbf1ec3d687dfb6937d71d0ddaa3d8bedc1af
-  specs:
-    delayed_job (4.0.0)
-      activesupport (>= 3.0, < 5.0)
-
-GIT
   remote: https://github.com/zipmark/rspec_api_documentation.git
   revision: b5e003b77f36d6ef8978604250558fc57620b52e
   specs:
@@ -94,6 +87,8 @@ GEM
     crack (0.4.3)
       safe_yaml (~> 1.0.0)
     daemons (1.2.3)
+    delayed_job (4.0.6)
+      activesupport (>= 3.0, < 5.0)
     diff-lcs (1.2.5)
     docile (1.1.5)
     em-http-request (1.1.2)
@@ -234,9 +229,7 @@ GEM
     machinist (1.0.6)
     membrane (1.1.0)
     method_source (0.8.2)
-    mime-types (3.0)
-      mime-types-data (~> 3.2015)
-    mime-types-data (3.2015.1120)
+    mime-types (2.6.1)
     mini_portile2 (2.0.0)
     minitest (5.8.3)
     msgpack (0.5.12)
@@ -412,7 +405,6 @@ DEPENDENCIES
   clockwork
   cloudfront-signer
   codeclimate-test-reporter
-  delayed_job!
   delayed_job_sequel!
   eventmachine (~> 1.0.0)
   fakefs
@@ -422,6 +414,7 @@ DEPENDENCIES
   loggregator_emitter (~> 5.0)
   machinist (~> 1.0.6)
   membrane (~> 1.0)
+  mime-types (= 2.6.1)
   multi_json
   mysql2 (= 0.3.20)
   netaddr

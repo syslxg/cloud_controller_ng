@@ -4,6 +4,7 @@ require 'fog'
 require 'cloud_controller/blobstore/directory'
 require 'cloud_controller/blobstore/blob'
 require 'cloud_controller/blobstore/idempotent_directory'
+require 'mime/types'
 
 module CloudController
   module Blobstore
