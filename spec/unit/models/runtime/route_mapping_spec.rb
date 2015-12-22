@@ -6,7 +6,6 @@ module VCAP::CloudController
     let(:space) { Space.make }
     it { is_expected.to have_timestamp_columns }
 
-
     describe 'Associations' do
       let(:route) { Route.make(space: space) }
       let(:app) { App.make(space: space) }
@@ -64,7 +63,7 @@ module VCAP::CloudController
           it 'uses the first port in the list of app ports' do
             mapping = RouteMapping.new(app: app_obj, route: route)
             mapping.save
-            expect(mapping.app_port).to eq (8080)
+            expect(mapping.app_port).to eq(8080)
           end
         end
 
@@ -82,7 +81,7 @@ module VCAP::CloudController
           it 'uses the app port specified' do
             mapping = RouteMapping.new(app: app_obj, route: route, app_port: 1111)
             mapping.save
-            expect(mapping.app_port).to eq (1111)
+            expect(mapping.app_port).to eq(1111)
           end
         end
       end
