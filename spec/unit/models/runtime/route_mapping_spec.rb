@@ -6,6 +6,28 @@ module VCAP::CloudController
     let(:space) { Space.make }
     it { is_expected.to have_timestamp_columns }
 
+    describe 'Backwards Compatibility' do
+      let(:app) { AppFactory.make }
+      let(:route) { Route.make(space: app.space) }
+      let!(:mapping) { RouteMapping.make }
+
+      before do
+        app.add_route(route)
+      end
+
+      it 'the model reads from new route_mappings table and old apps_routes table' do
+        mappings = RouteMapping.all
+
+        old_mapping = RouteMapping.new
+        old_mapping.app = app
+        old_mapping.route = route
+
+        expect(mappings.size).to eq 2
+        expect(mappings).to include(mapping)
+        expect(mappings).to include(old_mapping)
+      end
+    end
+
     describe 'Associations' do
       let(:route) { Route.make(space: space) }
       let(:app) { App.make(space: space) }
