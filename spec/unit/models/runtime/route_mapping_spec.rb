@@ -179,7 +179,7 @@ module VCAP::CloudController
         let(:domain) do
           PrivateDomain.make owning_organization: app.space.organization
         end
-        let(:app) { AppFactory.make(space: route.space, diego: true, ports: [1111]) }
+        let(:app) { AppFactory.make(space: route.space, diego: true, ports: [1111, 8080]) }
 
         before do
           allow(AppObserver).to receive(:routes_changed).with(app)
@@ -193,7 +193,7 @@ module VCAP::CloudController
 
         it 'calls the app observer with the app' do
           expect(AppObserver).to receive(:routes_changed).with(app)
-          RouteMapping.make(app: app, route: route)
+          mapping = RouteMapping.make(app: app, route: route)
         end
       end
     end

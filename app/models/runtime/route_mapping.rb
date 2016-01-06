@@ -1,5 +1,6 @@
 module VCAP::CloudController
-  class RouteMapping < Sequel::Model
+  class RouteMapping < Sequel::Model(:apps_routes)
+    set_primary_key [:app_id, :route_id]
     many_to_one :app
     many_to_one :route
 
@@ -7,8 +8,8 @@ module VCAP::CloudController
 
     import_attributes :app_port, :app_guid, :route_guid
 
-      # DATASET = App.dataset.join(:apps_routes, app_id: :id).select(:apps_routes__route_id, :apps_routes__app_id)
-      # set_dataset(DATASET)
+    # DATASET = App.dataset.join(:apps_routes, app_id: :id).select(:apps_routes__route_id, :apps_routes__app_id)
+    # set_dataset(DATASET)
 
     def validate
       if self.app_port && !app.diego
@@ -23,8 +24,19 @@ module VCAP::CloudController
       if !self.app_port && app.diego
         self.app_port = app.ports.first
       end
-      app.add_route(route)
       super
     end
+
+    def before_create
+      app.validate_route(route)
+      super
+    end
+
+    def after_create
+      app.handle_add_route(route)
+      super
+    end
+
+    # TODO: test app.handle_remove_app
   end
 end
