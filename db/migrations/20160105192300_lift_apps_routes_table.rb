@@ -5,7 +5,11 @@ Sequel.migration do
       add_column :created_at, :timestamp, null: false, default: Sequel::CURRENT_TIMESTAMP
       add_column :updated_at, :timestamp
       add_column :app_port, Integer
-      add_column :guid, String
+      add_column :id, Integer, auto_increment: true, primary_key: true
+    end
+
+    if self.class.name.match /mysql/i
+      run 'ALTER TABLE APPS_ROUTES ADD COLUMN guid varchar(255) default UUID();'
     end
 
     self[:apps_routes]
@@ -44,6 +48,7 @@ Sequel.migration do
       drop_column :app_port
       drop_column :updated_at
       drop_column :created_at
+      drop_column :id
     end
   end
 end
