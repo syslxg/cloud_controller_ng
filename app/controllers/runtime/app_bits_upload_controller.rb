@@ -22,7 +22,12 @@ module VCAP::CloudController
       super
     end
 
-    put "#{path_guid}/bits", :upload
+    put "#{path_guid}/bits", :upload_redirect
+    def upload_redirect(guid)
+      redirect "https://api.bosh-lite.com/v2/apps/#{guid}/bits2", 307
+    end
+
+    put "#{path_guid}/bits2", :upload
     def upload(guid)
       app = find_guid_and_validate_access(:upload, guid)
 

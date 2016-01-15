@@ -78,7 +78,11 @@ http {
     }
 <% end %>
 
-    location ~ (/v2/apps/[^/]+/bits|/services/v\d+/configurations/.*/serialized/data|/v2/buildpacks/.*/bits|/v3/packages/.*/upload) {
+    location ~ (/v2/apps/[^/]+/bits) {
+        proxy_pass http://cloud_controller;
+    }
+
+    location ~ (/services/v\d+/configurations/.*/serialized/data|/v2/buildpacks/.*/bits|/v3/packages/.*/upload) {
       # Pass altered request body to this location
       upload_pass   @cc_uploads;
       upload_pass_args on;
