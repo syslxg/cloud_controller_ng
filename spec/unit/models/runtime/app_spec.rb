@@ -2090,19 +2090,21 @@ module VCAP::CloudController
       end
 
       context 'with both http and tcp routes' do
-        let(:app) { AppFactory.make(space: space, diego: true, ports:[8080, 9090]) }
+        let(:app) { AppFactory.make(space: space, diego: true, ports:[8080, 9090, 5555]) }
         let(:tcp_domain) { SharedDomain.make(name: 'tcpdomain.com', router_group_guid: 'router-group-guid-1') }
         let(:tcp_route) { Route.make(domain: tcp_domain, space: space, port: 52000) }
-        let!(:route_mapping) {RouteMapping.make(app: app, route: route_with_service, app_port:8080)}
-        let!(:tcp_route_mapping) {RouteMapping.make(app: app, route: tcp_route, app_port:9090)}
+        let!(:route_mapping_1) {RouteMapping.make(app: app, route: route_with_service, app_port:8080)}
+        let!(:route_mapping_2) {RouteMapping.make(app: app, route: route_with_service, app_port:9090)}
+        let!(:tcp_route_mapping) {RouteMapping.make(app: app, route: tcp_route, app_port:5555)}
 
         it 'returns the app port in routing info' do
           expected_hash = {
             'http_routes' => [
               { 'hostname' => route_with_service.uri, 'route_service_url' => route_with_service.route_service_url, 'port' => 8080 },
+              { 'hostname' => route_with_service.uri, 'route_service_url' => route_with_service.route_service_url, 'port' => 9090 },
             ],
             'tcp_routes' => [
-              { 'router_group_guid' => tcp_domain.router_group_guid, 'external_port' => tcp_route.port, 'container_port' => 9090 },
+              { 'router_group_guid' => tcp_domain.router_group_guid, 'external_port' => tcp_route.port, 'container_port' => 5555 },
             ]
           }
 
