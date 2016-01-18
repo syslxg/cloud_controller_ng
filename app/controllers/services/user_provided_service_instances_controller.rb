@@ -124,12 +124,6 @@ module VCAP::CloudController
       bind_route(other_guid, guid)
     end
 
-    def add_related(guid, name, other_guid)
-      return super(guid, name, other_guid) if name != :routes
-
-      bind_route(other_guid, guid)
-    end
-
     def remove_related(guid, name, other_guid)
       return super(guid, name, other_guid) if name != :routes
 
