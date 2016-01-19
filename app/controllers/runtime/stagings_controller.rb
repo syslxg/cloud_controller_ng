@@ -212,7 +212,7 @@ module VCAP::CloudController
 
     def get_from_hash_tree(hash, *path)
       path.reduce(hash) do |here, seg|
-        return unless here && here.is_a?(Hash)
+        break unless here && here.is_a?(Hash)
         here[seg]
       end
     end
