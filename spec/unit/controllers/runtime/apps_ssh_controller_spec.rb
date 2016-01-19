@@ -6,6 +6,7 @@ module VCAP::CloudController
     let(:diego) { true }
     let(:enable_ssh) { true }
     let(:user) { User.make }
+    let(:admin_user) { User.make }
     let(:app_model) { AppFactory.make(diego: diego, enable_ssh: enable_ssh) }
     let(:instance_index) { '2' }
     let(:space) { app_model.space }
@@ -36,10 +37,8 @@ module VCAP::CloudController
       end
 
       context 'as an admin user' do
-        let(:user) { User.make }
-
         it 'returns a 200 and ProcessGuid' do
-          get "/internal/apps/#{app_model.guid}/ssh_access/#{instance_index}", {}, admin_headers_for(user)
+          get "/internal/apps/#{app_model.guid}/ssh_access/#{instance_index}", {}, admin_headers_for(admin_user)
           expect(last_response.status).to eq(200)
           expected_process_guid = VCAP::CloudController::Diego::ProcessGuid.from_app(app_model)
           expect(decoded_response['process_guid']).to eq(expected_process_guid)
@@ -47,11 +46,11 @@ module VCAP::CloudController
 
         it 'creates an audit event recording this ssh access' do
           expect {
-            get "/internal/apps/#{app_model.guid}/ssh_access/#{instance_index}", {}, admin_headers_for(user)
+            get "/internal/apps/#{app_model.guid}/ssh_access/#{instance_index}", {}, admin_headers_for(admin_user)
           }.to change { Event.count }.by(1)
           event = Event.last
           expect(event.type).to eq('audit.app.ssh-authorized')
-          expect(event.actor).to eq(user.guid)
+          expect(event.actor).to eq(admin_user.guid)
           expect(event.metadata).to eq({ 'index' => instance_index })
         end
       end
@@ -231,6 +230,20 @@ module VCAP::CloudController
           expect(event.metadata).to eq({ 'index' => 'unknown' })
         end
       end
+      #
+      # context 'as an admin' do
+      #   # make an admin user
+      #   let(:user) { User.make }
+      #   it 'allows ssh access' do
+      #     # make the http request as admin
+      #     get "/internal/apps/#{app_model.guid}/ssh_access", {}, admin_headers_for(user)
+      #     expect(last_response.status).to eq(200)
+      #     expected_process_guid = VCAP::CloudController::Diego::ProcessGuid.from_app(app_model)
+      #     expect(decoded_response['process_guid']).to eq(expected_process_guid)
+      #   end
+      #     # check that the response was successful
+      #   end
+      # end
     end
   end
 end
