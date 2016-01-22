@@ -563,6 +563,21 @@
   http_code: 500
   message: "Runner error: %s"
 
+170017:
+  name: InvalidTaskAddress
+  http_code: 500
+  message: "Invalid config: %s"
+
+170018:
+  name: TaskError
+  http_code: 500
+  message: "task failed: %s"
+
+170019:
+  name: TaskWorkersUnavailable
+  http_code: 503
+  message: "Task workers are unavailable: %s"
+
 180002:
   name: ServiceGatewayError
   http_code: 503
