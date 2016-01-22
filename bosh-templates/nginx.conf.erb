@@ -30,6 +30,10 @@ http {
     server unix:/var/vcap/sys/run/cloud_controller_ng/cloud_controller.sock;
   }
 
+  upstream bit_service {
+    server unix:/var/vcap/sys/run/bit_service/bit_service.sock;
+  }
+
   server {
     listen    <%= p("cc.external_port") %>;
     server_name  _;
@@ -78,7 +82,11 @@ http {
     }
 <% end %>
 
-    location ~ (/v2/buildpacks/.*/bits) {
+    location ~ (/v2/buildpacks/[^/]+/(bits|download)) {
+      if ($request_method = GET){
+        proxy_pass http://bit_service;
+      }
+
       # Pass altered request body to this location
       upload_pass   @bits_uploads;
       upload_pass_args on;
@@ -87,7 +95,7 @@ http {
       client_max_body_size <%= p("cc.app_bits_max_body_size") %>; #already enforced upstream/but doesn't hurt.
 
       # Store files to this directory
-      upload_store /var/vcap/data/cloud_controller_ng/tmp/uploads;
+      upload_store /var/vcap/data/bit_service/tmp/uploads;
 
       # No limit for output body forwarded to CC
       upload_max_output_body_len 0;
@@ -105,6 +113,11 @@ http {
 
       #on any error, delete uploaded files.
       upload_cleanup 400-505;
+    }
+
+    # Bits Service
+    location @bits_uploads {
+      proxy_pass http://unix:/var/vcap/sys/run/bit_service/bit_service.sock;
     }
 
     location ~ (/v2/apps/[^/]+/bits|/services/v\d+/configurations/.*/serialized/data|/v3/packages/.*/upload) {
@@ -168,11 +181,6 @@ http {
     # Pass altered request body to a backend
     location @cc_uploads {
       proxy_pass http://unix:/var/vcap/sys/run/cloud_controller_ng/cloud_controller.sock;
-    }
-
-    # Bits Service
-    location @bits_uploads {
-      proxy_pass http://unix:/var/vcap/sys/run/bit_service/bit_service.sock;
     }
 
     location ~ ^/internal_redirect/(.*){
