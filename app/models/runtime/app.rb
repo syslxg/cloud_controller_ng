@@ -753,6 +753,24 @@ module VCAP::CloudController
         services_hash[binding[:label]] ||= []
         services_hash[binding[:label]] << service
       end
+
+      parent_services_hash = {}
+      if app
+        app.service_bindings.each do |sb|
+          service_name = sb.service.label
+          parent_services_hash[service_name] ||= []
+          parent_services_hash[service_name] << {
+            'name' => sb.service_instance.name,
+            'label' => sb.service_instance.service.label,
+            'tags' => sb.service_instance.merged_tags,
+            'plan' => sb.service_instance.service_plan.name,
+            'credentials' => sb.credentials,
+            'syslog_drain_url' => sb.syslog_drain_url
+          }
+        end
+      end
+      services_hash.merge!(parent_services_hash)
+
       { 'VCAP_SERVICES' => services_hash }
     end
 

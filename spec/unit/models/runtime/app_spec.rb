@@ -1172,7 +1172,7 @@ module VCAP::CloudController
         let(:service_instance_diff_label) { ManagedServiceInstance.make(space: space, service_plan: service_plan_alt, name: 'giraffesql-vip-uat') }
 
         before do
-          ServiceBinding.make(app: app, service_instance: service_instance)
+          ServiceBinding.make(app: app, service_instance: service_instance, syslog_drain_url: 'logs.go-here.com')
         end
 
         it 'contains a populated vcap_services' do
@@ -1181,17 +1181,62 @@ module VCAP::CloudController
           expect(app.system_env_json['VCAP_SERVICES']["#{service.label}"]).to have(1).services
         end
 
+        context 'when process belongs to a parent(v3) app bound to a service' do
+          let(:process) { app }
+          let(:parent_app) { AppModel.make space_guid: space.guid }
+          let(:service_2) { Service.make(label: 'rabbit', tags: ['swell']) }
+          let(:service_plan_2) { ServicePlan.make(service: service_2) }
+          let(:service_instance_2) { ManagedServiceInstance.make(space: space, service_plan: service_plan_2, name: 'rabbit-instance') }
+          let!(:service_binding_2) do
+            ServiceBindingModel.create(app: parent_app, service_instance: service_instance_2,
+              type: 'app', credentials: { 'url' => 'www.service.com/foo' }, syslog_drain_url: 'logs.go-here-2.com')
+          end
+
+          before do
+            process.app = parent_app
+          end
+
+          it 'includes the services from the parent' do
+            expect(process.system_env_json['VCAP_SERVICES']).not_to eq({})
+            expect(process.system_env_json['VCAP_SERVICES']).to have_key("#{service_2.label}")
+          end
+
+          it 'includes name' do
+            expect(process.system_env_json['VCAP_SERVICES']['rabbit'].first).to include('name' => service_instance_2.name)
+          end
+
+          it 'includes label' do
+            expect(process.system_env_json['VCAP_SERVICES']['rabbit'].first).to include('label' => service_2.label)
+          end
+
+          it 'includes tags' do
+            expect(process.system_env_json['VCAP_SERVICES']['rabbit'].first).to include('tags' => service_instance_2.merged_tags)
+          end
+
+          it 'includes plan' do
+            expect(process.system_env_json['VCAP_SERVICES']['rabbit'].first).to include('plan' => service_plan_2.name)
+          end
+
+          it 'includes credentials' do
+            expect(process.system_env_json['VCAP_SERVICES']['rabbit'].first).to include('credentials' => service_binding_2.credentials)
+          end
+
+          it 'includes syslog_drain_url' do
+            expect(process.system_env_json['VCAP_SERVICES']['rabbit'].first).to include('syslog_drain_url' => service_binding_2.syslog_drain_url)
+          end
+        end
+
         describe 'service hash includes only white-listed keys' do
           subject(:service_hash_keys) do
             app.system_env_json['VCAP_SERVICES']["#{service.label}"].first.keys
           end
 
-          its(:count) { should eq(5) }
           it { is_expected.to include('name') }
           it { is_expected.to include('label') }
           it { is_expected.to include('tags') }
           it { is_expected.to include('plan') }
           it { is_expected.to include('credentials') }
+          it { is_expected.to include('syslog_drain_url') }
         end
 
         describe 'grouping' do

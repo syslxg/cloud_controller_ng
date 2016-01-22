@@ -15,7 +15,7 @@ module VCAP::CloudController
                                                 app: app_model,
                                                 credentials: {},
                                                 type: type)
-      raise InvalidServiceBinding unless service_binding.valid?
+      raise InvalidServiceBinding.new(service_binding.errors.full_messages) unless service_binding.valid?
       raise ServiceInstanceNotBindable unless service_instance.bindable?
 
       raise_if_locked(service_binding.service_instance)
