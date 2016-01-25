@@ -13,13 +13,14 @@ module CloudController
     class FogClient < BaseClient
       DEFAULT_BATCH_SIZE = 1000
 
-      def initialize(connection_config, directory_key, cdn=nil, root_dir=nil, min_size=nil, max_size=nil)
+      def initialize(connection_config, directory_key, cdn=nil, root_dir=nil, min_size=nil, max_size=nil, connection=nil)
         @root_dir = root_dir
         @connection_config = connection_config
         @directory_key = directory_key
         @cdn = cdn
         @min_size = min_size || 0
         @max_size = max_size
+        @connection = connection
       end
 
       def local?
@@ -122,12 +123,11 @@ module CloudController
         FogBlob.new(f, @cdn) if f
       end
 
-      # Deprecated should not allow to access underlying files
+      private
+
       def files
         dir.files
       end
-
-      private
 
       def files_for(prefix)
         if connection.is_a? Fog::Storage::Local::Real

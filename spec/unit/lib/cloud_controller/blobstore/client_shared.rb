@@ -77,6 +77,6 @@ shared_examples_for 'a blobstore client' do
   it 'has a files method that we want to remove' do
     expect {
       subject.files
-    }.not_to raise_error
+    }.to raise_error(NoMethodError)
   end
 end
