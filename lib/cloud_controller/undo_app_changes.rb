@@ -28,8 +28,8 @@ module VCAP::CloudController
 
     def update(changes, key)
       where_columns = app.pk_hash
-      where_columns[key] = changes[key][1]
-      where_columns[:updated_at] = changes[:updated_at][1]
+      # where_columns[key] = changes[key][1]
+      # where_columns[:updated_at] = changes[:updated_at][1]
 
       update_columns = { key => changes[key][0] }
 

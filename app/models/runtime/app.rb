@@ -611,6 +611,7 @@ module VCAP::CloudController
       begin
         AppObserver.updated(self)
       rescue Errors::ApiError => e
+        p "we are getting here!: #{previous_changes}"
         UndoAppChanges.new(self).undo(previous_changes) unless diego?
         raise e
       end

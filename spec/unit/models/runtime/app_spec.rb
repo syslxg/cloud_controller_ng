@@ -31,6 +31,26 @@ module VCAP::CloudController
       VCAP::CloudController::Seeds.create_seed_stacks
     end
 
+    it 'successfully runs UndoAppChanges after failure to update', isolation: :truncation do
+      app = AppFactory.make(instances: 1)
+      original_updated_at = app.updated_at
+
+      allow(AppObserver).to receive(:updated).and_raise Errors::ApiError.new_from_details('AppPackageInvalid', 'The app package hash is empty')
+
+      suppress(Exception) do
+        app.update(instances: 2)#, updated_at: Sequel::CURRENT_TIMESTAMP)
+      end
+
+      # assert on what happened
+      app.reload
+      expect(app.instances).to eq(1)
+      # expect(app.updated_at).to eq(original_updated_at)
+
+      # app = AppFactory.make
+      # expect(AppObserver).to receive(:updated).with(app)
+      # app.update(instances: app.instances + 1)
+    end
+
     it_behaves_like 'a model with an encrypted attribute' do
       let(:value_to_encrypt) { '{"foo":"bar"}' }
       let(:encrypted_attr) { :environment_json_without_serialization }
