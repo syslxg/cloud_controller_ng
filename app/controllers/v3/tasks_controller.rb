@@ -1,11 +1,38 @@
 require 'queries/app_fetcher'
+require 'queries/task_list_fetcher'
 require 'actions/task_create'
 require 'messages/task_create_message'
+require 'messages/tasks_list_message'
 require 'presenters/v3/task_presenter'
 require 'controllers/v3/mixins/app_subresource'
 
-class AppsTasksController < ApplicationController
+class TasksController < ApplicationController
   include AppSubresource
+
+  def index
+    app_guid = params[:app_guid]
+    message = TasksListMessage.from_params(query_params)
+    invalid_param!(message.errors.full_messages) unless message.valid?
+
+    pagination_options = PaginationOptions.from_params(query_params)
+    invalid_param!(pagination_options.errors.full_messages) unless pagination_options.valid?
+
+    if app_guid
+      app, space, org = AppFetcher.new.fetch(app_guid)
+      app_not_found! unless app && can_read?(space.guid, org.guid)
+    end
+
+    # if roles.admin?
+    #   paginated_result = PackageListFetcher.new.fetch_all(pagination_options)
+    # else
+    space_guids = membership.space_guids_for_roles(
+      [Membership::SPACE_DEVELOPER,
+        Membership::SPACE_MANAGER,
+        Membership::SPACE_AUDITOR])
+    paginated_result = TaskListFetcher.new.fetch(pagination_options, space_guids, app_guid)
+
+    render :ok, json: TaskPresenter.new.present_json_list(paginated_result, "/v3/apps/#{params[:guid]}/tasks", message)
+  end
 
   def create
     FeatureFlag.raise_unless_enabled!('task_creation') unless roles.admin?

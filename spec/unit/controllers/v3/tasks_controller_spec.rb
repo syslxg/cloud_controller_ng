@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-describe AppsTasksController, type: :controller do
+describe TasksController, type: :controller do
   let(:enabled) { true }
   let(:membership) { instance_double(VCAP::CloudController::Membership) }
   let(:app_model) { VCAP::CloudController::AppModel.make }
@@ -10,7 +10,7 @@ describe AppsTasksController, type: :controller do
   before do
     VCAP::CloudController::FeatureFlag.make(name: 'task_creation', enabled: enabled, error_message: nil)
     @request.env.merge!(headers_for(VCAP::CloudController::User.make))
-    allow_any_instance_of(AppsTasksController).to receive(:membership).and_return(membership)
+    allow_any_instance_of(TasksController).to receive(:membership).and_return(membership)
     allow(membership).to receive(:has_any_roles?).with(
       [VCAP::CloudController::Membership::SPACE_DEVELOPER], space.guid).and_return(true)
     allow(membership).to receive(:has_any_roles?).with(
@@ -203,15 +203,6 @@ describe AppsTasksController, type: :controller do
       end
     end
 
-    context 'when only task guid is present' do
-      it 'returns a 200 and the task' do
-        get :show, task_guid: task.guid
-
-        expect(response.status).to eq 200
-        expect(JSON.parse(response.body)).to include('name' => 'mytask')
-      end
-    end
-
     describe 'access permissions' do
       context 'when the user does not have read scope' do
         before do
@@ -251,6 +242,109 @@ describe AppsTasksController, type: :controller do
       expect(response.status).to eq 404
       expect(response.body).to include 'ResourceNotFound'
       expect(response.body).to include 'Task not found'
+    end
+  end
+
+  describe '#index' do
+    before do
+      allow(membership).to receive(:space_guids_for_roles).with(
+          [VCAP::CloudController::Membership::SPACE_DEVELOPER,
+            VCAP::CloudController::Membership::SPACE_MANAGER,
+            VCAP::CloudController::Membership::SPACE_AUDITOR]).and_return([space.guid])
+
+      @request.env.merge!(headers_for(VCAP::CloudController::User.make))
+      allow(VCAP::CloudController::Membership).to receive(:new).and_return(membership)
+      allow(membership).to receive(:has_any_roles?).and_return(true)
+    end
+
+    it 'returns tasks the user has roles to see' do
+      task_1 = VCAP::CloudController::TaskModel.make(app_guid: app_model.guid)
+      task_2 = VCAP::CloudController::TaskModel.make(app_guid: app_model.guid)
+      VCAP::CloudController::TaskModel.make
+
+      get :index
+
+      response_guids = JSON.parse(response.body)['resources'].map { |r| r['guid'] }
+      expect(response.status).to eq(200)
+      expect(response_guids).to match_array([task_1, task_2].map(&:guid))
+    end
+
+    context 'query params' do
+      context 'invalid param format' do
+        it 'returns 400' do
+          get :index, per_page: 'meow'
+
+          expect(response.status).to eq 400
+          expect(response.body).to include("Per page is not a number")
+          expect(response.body).to include('BadQueryParameter')
+        end
+      end
+
+      context 'unknown query param' do
+        it 'returns 400' do
+          get :index, meow: 'bad-val', nyan: 'mow'
+
+          expect(response.status).to eq 400
+          expect(response.body).to include('BadQueryParameter')
+          expect(response.body).to include('Unknown query parameter(s)')
+          expect(response.body).to include('nyan')
+          expect(response.body).to include('meow')
+        end
+      end
+    end
+
+    context 'when an app is specified' do
+      it 'only shows tasks for that app'
+    end
+
+    context 'admin' do
+      before do
+        @request.env.merge!(admin_headers)
+      end
+
+      context 'the app exists' do
+        it 'returns a 200 and all droplets belonging to the app' do
+          task_1 = VCAP::CloudController::TaskModel.make(app_guid: app_model.guid)
+          task_2 = VCAP::CloudController::TaskModel.make(app_guid: app_model.guid)
+          VCAP::CloudController::TaskModel.make
+
+          get :index, app_guid: app_model.guid
+
+          response_guids = JSON.parse(response.body)['resources'].map { |r| r['guid'] }
+          expect(response.status).to eq(200)
+          expect(response_guids).to match_array([task_1, task_2].map(&:guid))
+        end
+      end
+
+      context 'the app does not exist' do
+        it 'returns a 404 Resource Not Found' do
+          get :index, app_guid: 'hello-i-do-not-exist'
+
+          expect(response.status).to eq 404
+          expect(response.body).to include 'ResourceNotFound'
+        end
+      end
+    end
+
+    context 'permissions' do
+      # pending 'is this app-specific or would it work without specifying app_guid?'
+
+      context 'when the user cannot read the app' do
+        before do
+          allow(membership).to receive(:has_any_roles?).with(
+            [VCAP::CloudController::Membership::SPACE_DEVELOPER,
+              VCAP::CloudController::Membership::SPACE_MANAGER,
+              VCAP::CloudController::Membership::SPACE_AUDITOR,
+              VCAP::CloudController::Membership::ORG_MANAGER], space.guid, org.guid).and_return(false)
+        end
+
+        it 'returns a 404 Resource Not Found error' do
+          get :index, app_guid: app_model.guid
+
+          expect(response.body).to include 'ResourceNotFound'
+          expect(response.status).to eq 404
+        end
+      end
     end
   end
 end

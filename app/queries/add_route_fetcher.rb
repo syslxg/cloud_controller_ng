@@ -21,3 +21,32 @@ module VCAP::CloudController
     end
   end
 end
+
+<<-SQL
+SELECT
+  routes.*
+FROM
+  routes
+LEFT JOIN
+  spaces on routes.space_id = spaces.id
+WHERE
+  spaces.guid = $1
+SQL
+
+<<-SQL
+SELECT
+  *
+FROM
+  routes
+WHERE
+  routes.space_id = $1
+SQL
+
+<<-SQL
+SELECT
+  *
+FROM
+  routes
+WHERE
+  routes.space_guid = $1
+SQL
